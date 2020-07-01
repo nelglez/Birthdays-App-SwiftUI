@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct RowView: View {
     @ObservedObject var birthday: Birthday
@@ -25,9 +26,20 @@ struct RowView: View {
             VStack {
                 Text("Turning").background(Color.orange).foregroundColor(.white).cornerRadius(5)
                 Text("\(getYearsOld(date: (birthday.birthdate ?? Date())))")
-                Text("In \(daysUntil(birthday: birthday.birthdate  ?? Date())) day(s)").background(Color.blue).cornerRadius(5)
+                Text("\(daysUntil(birthday: birthday.birthdate  ?? Date()))").background(Color.blue).cornerRadius(5)
             }
         }.padding()
+        }.onAppear {
+            let calendar = Calendar.current
+            let month = calendar.component(.month, from: self.birthday.birthdate ?? Date())
+            let day = calendar.component(.day, from: self.birthday.birthdate ?? Date())
+            let todayMonth = calendar.component(.month, from: Date())
+            let todayDay = calendar.component(.day, from: Date())
+            
+            //If the birthday date is today then go ahead and schedule a local notification
+            if todayMonth == month && todayDay == day {
+                self.scheduleNotification(birthdayDate: self.birthday.birthdate ?? Date())
+            }
         }
     }
     func getDate(date: Date) -> Int {
@@ -43,7 +55,7 @@ struct RowView: View {
     }
     
     func getMonthName(date: Date) -> String {
-    
+        
         let nameFormatter = DateFormatter()
         nameFormatter.dateFormat = "MMM" // format January, February, March, ...
         
@@ -56,13 +68,65 @@ struct RowView: View {
         return date.age + 1
     }
     
-    func daysUntil(birthday: Date) -> Int {
+    func daysUntil(birthday: Date) -> String {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         let date = cal.startOfDay(for: birthday)
         let components = cal.dateComponents([.day, .month], from: date)
         let nextDate = cal.nextDate(after: today, matching: components, matchingPolicy: .nextTimePreservingSmallerComponents)
-        return cal.dateComponents([.day], from: today, to: nextDate ?? today).day ?? 0
+        let x = cal.dateComponents([.day], from: today, to: nextDate ?? today).day ?? 0
+        if x == 1 {
+            return "In 1 day"
+        } else if x == 365 {
+            return "Today"
+        } else {
+            return "In \(x) days"
+        }
+    }
+    
+    func scheduleNotification(birthdayDate: Date) {
+        let center = UNUserNotificationCenter.current()
+        
+        let title = "There's a birthday today!"
+
+        let addRequest = {
+            let content = UNMutableNotificationContent()
+            content.title = title
+          //  content.subtitle = prospect.emailAddress
+            content.sound = UNNotificationSound.default
+            
+            let calendar = Calendar.current
+           // calendar.component(.year, from: date)
+            let month = calendar.component(.month, from: birthdayDate)
+            let day = calendar.component(.day, from: birthdayDate)
+
+            var dateComponents = DateComponents()
+            dateComponents.month = month
+            dateComponents.day = day
+            dateComponents.hour = 7
+            
+            let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+           // shows the alert five seconds from now for testing purposes.
+         //   let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)
+
+            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: trigger)
+            center.add(request)
+        }
+
+        // more code to come
+        center.getNotificationSettings { settings in
+            if settings.authorizationStatus == .authorized {
+                addRequest()
+            } else {
+                center.requestAuthorization(options: [.alert, .badge, .sound]) { success, error in
+                    if success {
+                        addRequest()
+                    } else {
+                        print("D'oh")
+                    }
+                }
+            }
+        }
     }
 }
 
