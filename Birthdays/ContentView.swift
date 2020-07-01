@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct ContentView: View {
     @ObservedObject var birthDayController = BirthdayController()
@@ -46,7 +47,22 @@ struct ContentView: View {
             
             }
             Spacer()
-        }.padding()
+        }.padding().onAppear {
+            let center = UNUserNotificationCenter.current()
+            center.requestAuthorization(options: [.alert, .sound])
+            { (granted, error) in
+
+                if let error = error {
+                    print(error.localizedDescription)
+                }
+                
+                if granted {
+                    // Edit the user's data for later use
+                print("Permission Granted!")
+                }
+            }
+
+        }
         
     }
 }
