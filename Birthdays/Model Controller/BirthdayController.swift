@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreData
+import UserNotifications
 
 class BirthdayController: ObservableObject {
     @Published private(set) var birthdays: [Birthday] = []
@@ -32,19 +33,23 @@ class BirthdayController: ObservableObject {
           let fetchRequest: NSFetchRequest<Birthday> = Birthday.fetchRequest()
           let moc = CoreDataStack.shared.mainContext
 
-          do {
-              birthdays = try moc.fetch(fetchRequest)
-               
-          } catch {
-              NSLog("Error fetching tasks: \(error)")
+        DispatchQueue.main.async {
+            do {
+              
+                self.birthdays = try moc.fetch(fetchRequest)
+                 
+            } catch {
+                NSLog("Error fetching tasks: \(error)")
 
-          }
+            }
+        }
+          
       }
 
       // MARK: - CRUD Methods
       // Create
-      func addNewBirthdayFor(name: String, birthDate: Date, completion: @escaping() -> Void) {
-          _ = Birthday(name: name, birthdate: birthDate)
+    func addNewBirthdayFor(name: String, birthDate: Date, notification: Notif, completion: @escaping() -> Void) {
+        _ = Birthday(name: name, birthdate: birthDate, notification: notification)
           saveToPersistentStore()
         completion()
       }
@@ -60,6 +65,12 @@ class BirthdayController: ObservableObject {
 
       // Delete
       func delete(birthDay: Birthday) {
+        
+        let center = UNUserNotificationCenter.current()
+        guard let notificationId = birthDay.notification?.id else { return }
+        print("REMOVED NOTIF ID: \(notificationId)")
+        center.removePendingNotificationRequests(withIdentifiers: [notificationId])
+        
           let mainC = CoreDataStack.shared.mainContext
           mainC.delete(birthDay)
           saveToPersistentStore()    }
@@ -73,6 +84,7 @@ class BirthdayController: ObservableObject {
            
        }
 
+    
 
     
 //    func addNewBirthdayFor(name: String, birthDate: Date, completion: @escaping() -> Void) {

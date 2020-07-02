@@ -4,8 +4,14 @@
         <attribute name="birthdate" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" attributeType="String"/>
+        <relationship name="notification" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="Notif" inverseName="birthday" inverseEntity="Notif"/>
+    </entity>
+    <entity name="Notif" representedClassName="Notif" syncable="YES" codeGenerationType="class">
+        <attribute name="id" attributeType="String"/>
+        <relationship name="birthday" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Birthday" inverseName="notification" inverseEntity="Birthday"/>
     </entity>
     <elements>
-        <element name="Birthday" positionX="-63" positionY="-18" width="128" height="88"/>
+        <element name="Birthday" positionX="-63" positionY="-18" width="128" height="103"/>
+        <element name="Notif" positionX="-63" positionY="9" width="128" height="73"/>
     </elements>
 </model>
